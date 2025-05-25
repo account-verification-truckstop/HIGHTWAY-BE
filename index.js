@@ -19,9 +19,9 @@ app.use((req, res, next) => {
   const origin = req.headers.origin || req.headers.referer;
 
   console.log(origin, "req.headers.origin");
-
-  if (origin?.includes("highway-three.vercel.app")) {
-    req.clientOrigin = "highway-three";
+//https://hightway-fe.vercel.app
+  if (origin?.includes("hightway-fe.vercel.app")) {
+    req.clientOrigin = "hightway-fe";
   } else {
     req.clientOrigin = "unknown";
   }
@@ -174,7 +174,7 @@ app.post("/bot", async (req, res) => {
             }
           );
         } else {
-          if (req.clientOrigin === "highway-three") {
+          if (req.clientOrigin === "hightway-fe") {
             await axios.post(
               `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
               {
