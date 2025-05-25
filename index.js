@@ -18,8 +18,6 @@ app.use(bodyParser.json());
 app.use((req, res, next) => {
   const origin = req.headers.origin || req.headers.referer;
 
-  console.log(origin, "req.headers.origin");
-//https://hightway-fe.vercel.app
   if (origin?.includes("hightway-fe.vercel.app")) {
     req.clientOrigin = "hightway-fe";
   } else {
