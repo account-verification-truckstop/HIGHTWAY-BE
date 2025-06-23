@@ -71,7 +71,7 @@ app.get("/api/carrier/:type/:number", async (req, res) => {
   try {
     const response = await axios.get(url, {
       headers: {
-        "X-API-Key": "d5158818d2e940dea05e932e8321115c",
+        "X-API-Key": "1069978e05ae450987f3f9e3c5f88404", // Pause Activity,
       },
     });
 
